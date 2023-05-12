@@ -213,7 +213,7 @@ def cosine_sim(text1, text2):
 # ===== End of preprocessing Code =====
 
 # Route for the home page
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['POST','GET'])
 def index():
     if request.method == 'POST':
         # Process the submitted answers and calculate grades
