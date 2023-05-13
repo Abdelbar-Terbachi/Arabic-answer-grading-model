@@ -1,3 +1,5 @@
+import pickle
+
 from flask import Flask, render_template, request
 import csv
 import re
@@ -122,8 +124,8 @@ def doc(doc):
 def extract_words(sentence):
     ignore_words = ['a']
     words = re.sub("[^\w]", " ", sentence).split()
-    print('words:' + re)
-    print('words:' + words)
+    print('words: ' + str(re))
+    print('words:' + str(words))
     words_cleaned = [w.lower() for w in words if w not in stopwords]
     return words_cleaned
 
@@ -143,14 +145,26 @@ def bagofwords(sentence):
 
 
 def SVM():
-    Corpus = pd.read_csv("answer.csv", "ar")
-    test_data = Corpus['answer']
-    train_data = Corpus['q_answer']
+    # Corpus = pd.read_csv("answer.csv", "ar")
+
+    # Read the datasets
+    questions_df = pd.read_csv("questions.csv")
+    answers_df = pd.read_csv("answers.csv")
+
+    # Join the datasets on the common column "question_id"
+    merged_df = questions_df.merge(answers_df, on="question_id")
+
+    # Extract the merged question-answer pairs
+    questions = merged_df["question"]
+    answers = merged_df["answer"]
+
+    test_data = questions  # Corpus['answer']
+    train_data = answers  # Corpus['q_answer']
     test = doc(test_data)
     train = doc(train_data)
     vocabulary_train = tokenize_sentences(train)
     vocabulary_test = tokenize_sentences(test)
-    vectorizer = CountVectorizer(stop_words=stopwords)
+    vectorizer = CountVectorizer(stop_words=list(stopwords))
     X_train_counts = vectorizer.fit_transform(train)
     transformer = TfidfTransformer()
     tfidf_matrix_train = transformer.fit_transform(X_train_counts)
@@ -159,12 +173,14 @@ def SVM():
                              ('tfidf', TfidfTransformer()),
                              ('clf-svm', SGDClassifier(loss='hinge',
                                                        penalty='l2',
-                                                       alpha=1e-3, n_iter=5, random_state=
+                                                       alpha=1e-3, max_iter=1000, random_state=
                                                        42)), ])
     text_clf = text_clf_svm.fit(train, test)
     predicted_svm = text_clf_svm.predict(train)
     score = np.mean(predicted_svm == test)
-    return str(score)
+    # Save the trained model using pickle
+    with open("svm_model.pkl", "wb") as file:
+        pickle.dump(text_clf_svm, file)
 
 
 def word2vec(word):
@@ -209,28 +225,29 @@ def cosine_sim(text1, text2):
     tfidf = vectorizer.fit_transform([text1, text2])
     return (tfidf * tfidf.T).A[0, 1]
 
-
 # ===== End of preprocessing Code =====
 
 # Route for the home page
-@app.route('/', methods=['POST','GET'])
-def index():
-    if request.method == 'POST':
-        # Process the submitted answers and calculate grades
-        answers = request.form.getlist('answer')
-        grades = SVM(answers)  # Call your grading function here
-        return render_template('result.html', grades=grades)
-    else:
-        return render_template('index.html')
+# @app.route('/', methods=['POST', 'GET'])
+# def index():
+#     if request.method == 'POST':
+#         # Process the submitted answers and calculate grades
+#         answers = request.form.getlist('answer')
+#         grades = SVM(answers)  # Call your grading function here
+#         return render_template('result.html', grades=grades)
+#     else:
+#         return render_template('index.html')
+#
+#
+# # Route for handling the form submission
+# @app.route('/result', methods=['GET'])
+# def result():
+#     # Get the grades from the URL query parameters
+#     grades = request.args.get('grades')
+#     return render_template('result.html', grades=grades)
+#
+#
+# if __name__ == '__main__':
+#     app.run(debug=True)
 
-
-# Route for handling the form submission
-@app.route('/result', methods=['GET'])
-def result():
-    # Get the grades from the URL query parameters
-    grades = request.args.get('grades')
-    return render_template('result.html', grades=grades)
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+SVM()
