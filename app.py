@@ -124,8 +124,8 @@ def doc(doc):
 def extract_words(sentence):
     ignore_words = ['a']
     words = re.sub("[^\w]", " ", sentence).split()
-    print('words: ' + str(re))
-    print('words:' + str(words))
+    # print('words: ' + str(re))
+    # print('words:' + str(words))
     words_cleaned = [w.lower() for w in words if w not in stopwords]
     return words_cleaned
 
@@ -191,7 +191,7 @@ def word2vec(word):
     # precomputes the "length" of the word vector
     lw = sqrt(sum(c * c for c in cw.values()))
     # lw = sum(c * c for c in cw.values())/len(cw)
-    print('cw:' + '%.2f' % lw)
+    #  print('cw:' + '%.2f' % lw)
     # return a tuple
     return cw, sw, lw
 
@@ -225,29 +225,36 @@ def cosine_sim(text1, text2):
     tfidf = vectorizer.fit_transform([text1, text2])
     return (tfidf * tfidf.T).A[0, 1]
 
+
 # ===== End of preprocessing Code =====
 
 # Route for the home page
-# @app.route('/', methods=['POST', 'GET'])
-# def index():
-#     if request.method == 'POST':
-#         # Process the submitted answers and calculate grades
-#         answers = request.form.getlist('answer')
-#         grades = SVM(answers)  # Call your grading function here
-#         return render_template('result.html', grades=grades)
-#     else:
-#         return render_template('index.html')
-#
-#
-# # Route for handling the form submission
-# @app.route('/result', methods=['GET'])
-# def result():
-#     # Get the grades from the URL query parameters
-#     grades = request.args.get('grades')
-#     return render_template('result.html', grades=grades)
-#
-#
-# if __name__ == '__main__':
-#     app.run(debug=True)
+@app.route('/', methods=['POST', 'GET'])
+def index():
+    if request.method == 'POST':
+        # Process the submitted answers and calculate grades
+        answers = request.form.getlist('answers[]')
+        grades = SVM(answers)  # Call your grading function here
+        return render_template('result.html', grades=grades)
+    else:
+        questions = []
+        with open('questions.csv', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                questions.append(row['question'])
+
+        return render_template('index.html', questions=questions, len=len)
+
+
+# Route for handling the form submission
+@app.route('/result', methods=['GET'])
+def result():
+    # Get the grades from the URL query parameters
+    grades = request.args.get('grades')
+    return render_template('result.html', grades=grades)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 SVM()
