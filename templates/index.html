@@ -2,36 +2,56 @@
 <html>
 <head>
     <title>Questionnaire</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.15/dist/tailwind.min.css">
+    <link href="https://cdn.tailwindcss.com/2.2.17/tailwind.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container mx-auto py-8">
-        <h1 class="text-2xl font-bold mb-4">Questionnaire</h1>
+<h1>Questionnaire</h1>
 
-        <form action="/submit" method="POST">
-            {% for i in range(len(questions)) %}
-            <div class="mb-4">
-                <label class="block text-gray-700 font-bold mb-2" for="response{{ i }}">{{ questions[i] }}</label>
-                <textarea class="form-textarea mt-1 block w-full border border-solid border-black" rows="3" name="response{{ i }}"
-                          id="response{{ i }}"></textarea>
-            </div>
-        {% endfor %}
+<div id="questions-container">
+    {% for question in questions %}
+        <div>
+            <p>{{ question }}</p>
+            <input type="text" class="answer-input">
+        </div>
+    {% endfor %}
+</div>
 
-            <div class="mt-4">
-                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Submit</button>
-            </div>
-        </form>
+<button onclick="submitAnswers()">See Results</button>
 
-        {% if grades %}
-        <h2 class="text-xl font-bold mt-8 mb-4">Grades:</h2>
-        <ul>
-            {% for question, grade in grades.items() %}
-            <li>
-                <strong>{{ question }}</strong>: {{ grade }}
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-    </div>
-</body>
-</html>
+<div id="results-container"></div>
+
+<script>
+    // Submit answers and fetch results
+    function submitAnswers() {
+        const answerInputs = document.querySelectorAll('.answer-input');
+        const answers = [];
+
+        // Collect answers from each input field
+        answerInputs.forEach(answerInput => {
+            const answer = answerInput.value;
+            answers.push(answer);
+        });
+
+        // Send answers to the Flask backend for prediction
+        fetch('/predict', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({answers: answers})
+
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Process and display results
+                const resultsContainer = document.getElementById('results-container');
+                resultsContainer.innerHTML = '';
+
+                data.forEach(result => {
+                    const resultBox = document.createElement('div');
+                    resultBox.innerHTML = `<p>${result[0]}</p><p>${result[1]}</p>`;
+                    resultsContainer.appendChild(resultBox);
+                });
+            });
+    }
+</script>
