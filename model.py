@@ -56,7 +56,7 @@ def train_model():
     # Preprocess the questions and answers
     processed_questions = [preprocess_text(q) for q in questions]
     processed_answers = [preprocess_text(a) for a in correct_answers]
-
+# to reanalyse
     # Prepare the training data
     X_train_processed = processed_answers
 
