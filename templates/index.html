@@ -2,35 +2,67 @@
 <html>
 <head>
     <title>Questionnaire</title>
-    <link href="https://cdn.tailwindcss.com/2.2.17/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .ai-background {
+            background-image: url('https://images.unsplash.com/photo-1510906594845-bc082582c8cc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1144&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .gradient-background {
+            background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.6));
+        }
+
+        .blur-background {
+            backdrop-filter: blur(4px);
+        }
+    </style>
 </head>
-<body>
-<h1>Questionnaire</h1>
+<body class="ai-background">
+<div class="container mx-auto py-8">
+    <h1 class="text-4xl font-bold mb-8 text-white">Questionnaire</h1>
 
-<div id="questions-container">
-    {% for question in questions %}
-        <div>
-            <p>{{ question }}</p>
-            <input type="text" class="answer-input">
-        </div>
-    {% endfor %}
+    <div id="questions-container">
+        {% for question in questions %}
+            <div class="mb-4">
+                <p class="text-white">{{ question }}</p>
+                <input type="text"
+                       class="answer-input bg-transparent backdrop-filter backdrop-blur-sm border border-gray-300 rounded-lg px-4 py-2 mt-2 w-full text-white">
+            </div>
+        {% endfor %}
+    </div>
+
+    <button onclick="submitAnswers()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-4">
+        See Results
+    </button>
+
+    <div id="results-container" class="mt-8 text-white"></div>
 </div>
-
-<button onclick="submitAnswers()">See Results</button>
-
-<div id="results-container"></div>
-
 <script>
     // Submit answers and fetch results
     function submitAnswers() {
         const answerInputs = document.querySelectorAll('.answer-input');
         const answers = [];
 
-        // Collect answers from each input field
+        // Check if all input fields are filled
+        let isFormValid = true;
         answerInputs.forEach(answerInput => {
             const answer = answerInput.value;
-            answers.push(answer);
+            if (!answer) {
+                isFormValid = false;
+                answerInput.classList.add('border-red-500'); // Add red border to indicate missing input
+            } else {
+                answers.push(answer);
+                answerInput.classList.remove('border-red-500'); // Remove red border if input is filled
+            }
         });
+
+        if (!isFormValid) {
+            // Display an error message or take appropriate action when form is not valid
+            alert('Please fill in all the answers before submitting.');
+            return;
+        }
 
         // Send answers to the Flask backend for prediction
         fetch('/predict', {
@@ -39,7 +71,6 @@
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({answers: answers})
-
         })
             .then(response => response.json())
             .then(data => {
@@ -49,9 +80,26 @@
 
                 data.forEach(result => {
                     const resultBox = document.createElement('div');
-                    resultBox.innerHTML = `<p>${result[0]}</p><p>${result[1]}</p>`;
+                    resultBox.classList.add('bg-gray-800', 'p-4', 'rounded', 'mb-4', 'gradient-background', 'blur-background');
+
+                    const questionElement = document.createElement('div');
+                    questionElement.classList.add('text-white', 'mb-2');
+                    questionElement.innerText = result[0] + "  : الجواب ";
+
+                    const answerElement = document.createElement('p');
+                    answerElement.classList.add('text-gray-300');
+                    const parsedResult = parseFloat(result[1]);
+                    const transformedResult = parsedResult.toFixed(1);
+                    answerElement.innerText = transformedResult + "  : النتيجة ";
+
+                    resultBox.appendChild(questionElement);
+                    resultBox.appendChild(answerElement);
                     resultsContainer.appendChild(resultBox);
                 });
             });
     }
 </script>
+
+
+</body>
+</html>
