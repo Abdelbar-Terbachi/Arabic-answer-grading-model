@@ -1,1 +1,1 @@
-web: gunicorn arabic-answer-grading-model:app
+web: gunicorn scoring-model-project:app
