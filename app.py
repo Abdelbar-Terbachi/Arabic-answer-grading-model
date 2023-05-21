@@ -1,9 +1,3 @@
-import csv
-import json
-
-from model import preprocess_text
-from flask import Flask, request, jsonify, render_template
-import pickle
 
 app = Flask(__name__)
 
