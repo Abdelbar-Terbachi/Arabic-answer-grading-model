@@ -57,4 +57,3 @@ nltk==3.6.2
 yarl==1.8.2
 
 Flask~=2.3.2
-scikit-learn~=1.2.2
